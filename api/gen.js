@@ -2,12 +2,11 @@
 // FF GUEST GENERATOR API - VERCEL FUNCTION
 // ============================================================
 // Endpoint: /api/gen?region=ID&prefix=FAX
-// Multi-fallback URL
+// Multi-fallback URL, TANPA Host header
 // ============================================================
 
 import crypto from 'crypto';
 
-// ========== ENDPOINT CONFIG (MULTI FALLBACK) ==========
 const CONNECT_URLS = [
     "https://100067.connect.garena.com",
     "https://connect.garena.com"
@@ -24,7 +23,6 @@ const TOKEN_PATH = "/api/v2/oauth/guest/token:grant";
 const MAJOR_REGISTER_PATH = "/MajorRegister";
 const MAJOR_LOGIN_PATH = "/MajorLogin";
 
-// ========== KEYS ==========
 const HEX_KEY = "2ee44819e9b4598845141067b281621874d0d5d7af9d8f7e00c1e54715b7d1e3";
 const API_KEY = Buffer.from(HEX_KEY, 'hex');
 
@@ -40,25 +38,16 @@ const REGION_LANG = {
     "VN": "vi", "BR": "pt", "US": "en"
 };
 
-// ============================================================
-// AES ENCRYPT
-// ============================================================
 function aesEncrypt(dataBytes) {
     const cipher = crypto.createCipheriv('aes-128-cbc', AES_KEY, AES_IV);
     cipher.setAutoPadding(true);
     return Buffer.concat([cipher.update(dataBytes), cipher.final()]);
 }
 
-// ============================================================
-// HMAC SIGNATURE
-// ============================================================
 function hmacSign(payload) {
     return crypto.createHmac('sha256', API_KEY).update(payload).digest('hex');
 }
 
-// ============================================================
-// RANDOM GENERATORS
-// ============================================================
 function randStr(len, chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789') {
     let s = '';
     for (let i = 0; i < len; i++) s += chars[Math.floor(Math.random() * chars.length)];
@@ -70,9 +59,6 @@ function genName(prefix = 'FAX') { return `${prefix}${randStr(9)}`; }
 function genApiName() { return `FAX${randStr(6)}`; }
 function genApiPassword() { return `FAX_${randStr(16)}`; }
 
-// ============================================================
-// RARITY DETECTION
-// ============================================================
 const RARE_PATTERNS = {
     HIGH: /(1111111|2222222|3333333|4444444|5555555|6666666|7777777|8888888|9999999|0000000)/,
     LEGEND: /(111111|222222|333333|444444|555555|666666|777777|888888|999999|000000)/,
@@ -90,9 +76,6 @@ function detectRarity(accountId) {
     return { rarity: 'NORMAL', score: 0, pattern: null };
 }
 
-// ============================================================
-// STEP 1: GUEST REGISTER
-// ============================================================
 async function guestRegister(password) {
     const payload = JSON.stringify({
         app_id: 100067,
@@ -114,8 +97,7 @@ async function guestRegister(password) {
                     'Accept': 'application/json',
                     'Accept-Encoding': 'gzip',
                     'Authorization': `Signature ${signature}`,
-                    'Content-Type': 'application/json; charset=utf-8',
-                    'Host': new URL(url).hostname
+                    'Content-Type': 'application/json; charset=utf-8'
                 },
                 body: payload
             });
@@ -136,9 +118,6 @@ async function guestRegister(password) {
     return null;
 }
 
-// ============================================================
-// STEP 2: GUEST TOKEN
-// ============================================================
 async function guestToken(uid, password) {
     const payload = JSON.stringify({
         client_id: 100067,
@@ -163,8 +142,7 @@ async function guestToken(uid, password) {
                     'Accept': 'application/json',
                     'Accept-Encoding': 'gzip',
                     'Authorization': `Signature ${signature}`,
-                    'Content-Type': 'application/json; charset=utf-8',
-                    'Host': new URL(url).hostname
+                    'Content-Type': 'application/json; charset=utf-8'
                 },
                 body: payload
             });
@@ -188,9 +166,6 @@ async function guestToken(uid, password) {
     return null;
 }
 
-// ============================================================
-// PROTOBUF BUILDER
-// ============================================================
 function encodeVarint(n) {
     if (n < 0) n = (1 << 64) + n;
     const bytes = [];
@@ -228,9 +203,6 @@ function buildProto(fields) {
     return Buffer.concat(parts);
 }
 
-// ============================================================
-// XOR OPEN ID
-// ============================================================
 function xorOpenId(openId) {
     const keystream = [
         0x30,0x30,0x30,0x32,0x30,0x31,0x37,0x30,0x30,0x30,0x30,0x30,0x32,0x30,0x31,0x37,
@@ -243,9 +215,6 @@ function xorOpenId(openId) {
     return result;
 }
 
-// ============================================================
-// STEP 3: MAJOR REGISTER
-// ============================================================
 async function majorRegister(accessToken, openId, name, lang) {
     const fieldBytes = xorOpenId(openId);
     
@@ -278,8 +247,7 @@ async function majorRegister(accessToken, openId, name, lang) {
                     'X-GA': 'v1 1',
                     'ReleaseVersion': RELEASE_VERSION,
                     'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-Unity-Version': UNITY_VERSION,
-                    'Host': new URL(url).hostname
+                    'X-Unity-Version': UNITY_VERSION
                 },
                 body: encPayload
             });
@@ -297,9 +265,6 @@ async function majorRegister(accessToken, openId, name, lang) {
     return false;
 }
 
-// ============================================================
-// STEP 4: MAJOR LOGIN
-// ============================================================
 async function majorLogin(accessToken, openId, lang) {
     const parts = [
         Buffer.from('1a132026-09-27 00:00:00"09free fire01:081.115.0B2Android 13 / API-33 (TP1A.220624.014)J08HandheldR0aATM MobilsZ04WIFI60b60a68ee0572033007a1fARMv7 VFPv3 NEON VMH | 2400 | 28001c90f8a010fAdreno (TM) 64092010dOpenGL ES 3.29a01+Google|dfa4ab4b-9dc4-454e-8065-e70c733fa53fa2010e105.235.139.91aa0102', 'hex'),
@@ -334,8 +299,7 @@ async function majorLogin(accessToken, openId, lang) {
                     'X-GA': 'v1 1',
                     'ReleaseVersion': RELEASE_VERSION,
                     'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-Unity-Version': UNITY_VERSION,
-                    'Host': new URL(url).hostname
+                    'X-Unity-Version': UNITY_VERSION
                 },
                 body: encPayload
             });
@@ -377,9 +341,6 @@ async function majorLogin(accessToken, openId, lang) {
     return null;
 }
 
-// ============================================================
-// HANDLER
-// ============================================================
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -395,7 +356,6 @@ export default async function handler(req, res) {
         const name = genName(prefix);
         const lang = REGION_LANG[region.toUpperCase()] || 'en';
         
-        // Step 1: Guest Register
         const uid = await guestRegister(password);
         if (!uid) {
             return res.status(500).json({
@@ -405,7 +365,6 @@ export default async function handler(req, res) {
             });
         }
         
-        // Step 2: Guest Token
         const tokenData = await guestToken(uid, password);
         if (!tokenData) {
             return res.status(500).json({
@@ -416,10 +375,8 @@ export default async function handler(req, res) {
             });
         }
         
-        // Step 3: Major Register
         await majorRegister(tokenData.access_token, tokenData.open_id, name, lang);
         
-        // Step 4: Major Login
         const loginData = await majorLogin(tokenData.access_token, tokenData.open_id, lang);
         
         let accountId = 'N/A';
