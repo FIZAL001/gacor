@@ -2,7 +2,7 @@
 // FF GUEST GENERATOR API - VERCEL FUNCTION
 // ============================================================
 // Endpoint: /api/gen?region=ID&prefix=FAX
-// Multi-fallback URL, TANPA Host header
+// Dengan logging detail untuk debug
 // ============================================================
 
 import crypto from 'crypto';
@@ -38,16 +38,25 @@ const REGION_LANG = {
     "VN": "vi", "BR": "pt", "US": "en"
 };
 
+// ============================================================
+// AES ENCRYPT
+// ============================================================
 function aesEncrypt(dataBytes) {
     const cipher = crypto.createCipheriv('aes-128-cbc', AES_KEY, AES_IV);
     cipher.setAutoPadding(true);
     return Buffer.concat([cipher.update(dataBytes), cipher.final()]);
 }
 
+// ============================================================
+// HMAC SIGNATURE
+// ============================================================
 function hmacSign(payload) {
     return crypto.createHmac('sha256', API_KEY).update(payload).digest('hex');
 }
 
+// ============================================================
+// RANDOM GENERATORS
+// ============================================================
 function randStr(len, chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789') {
     let s = '';
     for (let i = 0; i < len; i++) s += chars[Math.floor(Math.random() * chars.length)];
@@ -59,6 +68,9 @@ function genName(prefix = 'FAX') { return `${prefix}${randStr(9)}`; }
 function genApiName() { return `FAX${randStr(6)}`; }
 function genApiPassword() { return `FAX_${randStr(16)}`; }
 
+// ============================================================
+// RARITY DETECTION
+// ============================================================
 const RARE_PATTERNS = {
     HIGH: /(1111111|2222222|3333333|4444444|5555555|6666666|7777777|8888888|9999999|0000000)/,
     LEGEND: /(111111|222222|333333|444444|555555|666666|777777|888888|999999|000000)/,
@@ -76,6 +88,9 @@ function detectRarity(accountId) {
     return { rarity: 'NORMAL', score: 0, pattern: null };
 }
 
+// ============================================================
+// STEP 1: GUEST REGISTER (DENGAN LOGGING DETAIL)
+// ============================================================
 async function guestRegister(password) {
     const payload = JSON.stringify({
         app_id: 100067,
@@ -102,14 +117,26 @@ async function guestRegister(password) {
                 body: payload
             });
             
+            const responseText = await response.text();
+            console.log(`[REGISTER] URL: ${url}`);
+            console.log(`[REGISTER] Payload: ${payload}`);
+            console.log(`[REGISTER] Signature: ${signature}`);
+            console.log(`[REGISTER] Status: ${response.status}`);
+            console.log(`[REGISTER] Response: ${responseText.substring(0, 500)}`);
+            
             if (response.ok) {
-                const data = await response.json();
-                if (data.code === 0) {
-                    console.log(`[REGISTER] Success via ${url}`);
-                    return data.data.uid;
+                try {
+                    const data = JSON.parse(responseText);
+                    if (data.code === 0) {
+                        console.log(`[REGISTER] SUCCESS! UID: ${data.data.uid}`);
+                        return data.data.uid;
+                    } else {
+                        console.log(`[REGISTER] API Error code: ${data.code} - ${data.error || data.message}`);
+                    }
+                } catch (e) {
+                    console.log(`[REGISTER] JSON parse error: ${e.message}`);
                 }
             }
-            console.log(`[REGISTER] ${url} returned ${response.status}`);
         } catch (e) {
             console.log(`[REGISTER] ${url} failed: ${e.message}`);
             continue;
@@ -118,6 +145,9 @@ async function guestRegister(password) {
     return null;
 }
 
+// ============================================================
+// STEP 2: GUEST TOKEN
+// ============================================================
 async function guestToken(uid, password) {
     const payload = JSON.stringify({
         client_id: 100067,
@@ -147,17 +177,27 @@ async function guestToken(uid, password) {
                 body: payload
             });
             
+            const responseText = await response.text();
+            console.log(`[TOKEN] URL: ${url}`);
+            console.log(`[TOKEN] Status: ${response.status}`);
+            console.log(`[TOKEN] Response: ${responseText.substring(0, 500)}`);
+            
             if (response.ok) {
-                const data = await response.json();
-                if (data.code === 0) {
-                    console.log(`[TOKEN] Success via ${url}`);
-                    return {
-                        access_token: data.data.access_token,
-                        open_id: data.data.open_id
-                    };
+                try {
+                    const data = JSON.parse(responseText);
+                    if (data.code === 0) {
+                        console.log(`[TOKEN] SUCCESS!`);
+                        return {
+                            access_token: data.data.access_token,
+                            open_id: data.data.open_id
+                        };
+                    } else {
+                        console.log(`[TOKEN] API Error: ${data.code} - ${data.error || data.message}`);
+                    }
+                } catch (e) {
+                    console.log(`[TOKEN] JSON parse error: ${e.message}`);
                 }
             }
-            console.log(`[TOKEN] ${url} returned ${response.status}`);
         } catch (e) {
             console.log(`[TOKEN] ${url} failed: ${e.message}`);
             continue;
@@ -166,6 +206,9 @@ async function guestToken(uid, password) {
     return null;
 }
 
+// ============================================================
+// PROTOBUF BUILDER
+// ============================================================
 function encodeVarint(n) {
     if (n < 0) n = (1 << 64) + n;
     const bytes = [];
@@ -203,6 +246,9 @@ function buildProto(fields) {
     return Buffer.concat(parts);
 }
 
+// ============================================================
+// XOR OPEN ID
+// ============================================================
 function xorOpenId(openId) {
     const keystream = [
         0x30,0x30,0x30,0x32,0x30,0x31,0x37,0x30,0x30,0x30,0x30,0x30,0x32,0x30,0x31,0x37,
@@ -215,6 +261,9 @@ function xorOpenId(openId) {
     return result;
 }
 
+// ============================================================
+// STEP 3: MAJOR REGISTER
+// ============================================================
 async function majorRegister(accessToken, openId, name, lang) {
     const fieldBytes = xorOpenId(openId);
     
@@ -252,11 +301,11 @@ async function majorRegister(accessToken, openId, name, lang) {
                 body: encPayload
             });
             
+            console.log(`[MAJOR-REGISTER] ${url} returned ${response.status}`);
+            
             if (response.ok) {
-                console.log(`[MAJOR-REGISTER] Success via ${url}`);
                 return true;
             }
-            console.log(`[MAJOR-REGISTER] ${url} returned ${response.status}`);
         } catch (e) {
             console.log(`[MAJOR-REGISTER] ${url} failed: ${e.message}`);
             continue;
@@ -265,6 +314,9 @@ async function majorRegister(accessToken, openId, name, lang) {
     return false;
 }
 
+// ============================================================
+// STEP 4: MAJOR LOGIN
+// ============================================================
 async function majorLogin(accessToken, openId, lang) {
     const parts = [
         Buffer.from('1a132026-09-27 00:00:00"09free fire01:081.115.0B2Android 13 / API-33 (TP1A.220624.014)J08HandheldR0aATM MobilsZ04WIFI60b60a68ee0572033007a1fARMv7 VFPv3 NEON VMH | 2400 | 28001c90f8a010fAdreno (TM) 64092010dOpenGL ES 3.29a01+Google|dfa4ab4b-9dc4-454e-8065-e70c733fa53fa2010e105.235.139.91aa0102', 'hex'),
@@ -324,11 +376,10 @@ async function majorLogin(accessToken, openId, lang) {
                             const accId = decoded.account_id || decoded.external_id;
                             
                             if (accId) {
-                                console.log(`[MAJOR-LOGIN] Success via ${url}`);
                                 return { account_id: String(accId), jwt_token: token };
                             }
                         } catch (e) {
-                            console.error('[MAJOR-LOGIN] JWT decode error:', e.message);
+                            console.log(`[MAJOR-LOGIN] JWT decode error: ${e.message}`);
                         }
                     }
                 }
@@ -341,6 +392,9 @@ async function majorLogin(accessToken, openId, lang) {
     return null;
 }
 
+// ============================================================
+// HANDLER
+// ============================================================
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -356,27 +410,33 @@ export default async function handler(req, res) {
         const name = genName(prefix);
         const lang = REGION_LANG[region.toUpperCase()] || 'en';
         
+        // Step 1: Guest Register
         const uid = await guestRegister(password);
         if (!uid) {
             return res.status(500).json({
                 success: false,
-                error: 'Guest register gagal di semua endpoint',
-                step: 'register'
+                error: 'Guest register gagal',
+                step: 'register',
+                hint: 'Cek Vercel Logs untuk detail error'
             });
         }
         
+        // Step 2: Guest Token
         const tokenData = await guestToken(uid, password);
         if (!tokenData) {
             return res.status(500).json({
                 success: false,
-                error: 'Guest token gagal di semua endpoint',
+                error: 'Guest token gagal',
                 step: 'token',
-                uid: uid
+                uid: uid,
+                password: password
             });
         }
         
+        // Step 3: Major Register
         await majorRegister(tokenData.access_token, tokenData.open_id, name, lang);
         
+        // Step 4: Major Login
         const loginData = await majorLogin(tokenData.access_token, tokenData.open_id, lang);
         
         let accountId = 'N/A';
