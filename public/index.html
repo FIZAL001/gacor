@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YudhistiraChackers - FF Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Orbitron:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #0a0a0a; color: #f5f5f5; min-height: 100vh; padding: 20px; }
+    .container { max-width: 750px; margin: 30px auto; }
+    h1 { font-family: 'Cinzel', serif; font-size: 1.8rem; background: linear-gradient(135deg, #F4E5B1, #D4AF37, #8B6914); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; text-align: center; margin-bottom: 10px; }
+    .subtitle { text-align: center; color: #D4AF37; font-size: 0.75rem; letter-spacing: 4px; margin-bottom: 30px; }
+    .card { background: #1a1a1a; border: 1px solid rgba(212,175,55,0.25); border-radius: 16px; padding: 25px; margin-bottom: 20px; position: relative; }
+    .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, #D4AF37, transparent); }
+    label { display: block; color: #D4AF37; font-size: 0.75rem; letter-spacing: 3px; margin-bottom: 10px; text-transform: uppercase; font-weight: 700; }
+    select, input, button { padding: 15px 18px; border-radius: 10px; border: 1.5px solid rgba(212,175,55,0.3); background: #0a0a0a; color: #f5f5f5; font-family: inherit; font-size: 0.95rem; width: 100%; margin-bottom: 12px; }
+    select:focus, input:focus { outline: none; border-color: #D4AF37; }
+    button { background: linear-gradient(135deg, #8B6914, #D4AF37); color: #000; font-weight: 700; cursor: pointer; letter-spacing: 2px; text-transform: uppercase; }
+    button:hover:not(:disabled) { transform: scale(1.02); box-shadow: 0 0 30px rgba(212,175,55,0.4); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .loading { text-align: center; padding: 20px; display: none; }
+    .loading.show { display: block; }
+    .spinner { width: 40px; height: 40px; border: 3px solid rgba(212,175,55,0.2); border-top-color: #D4AF37; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    .result-card { background: #0a0a0a; border: 1px solid rgba(212,175,55,0.25); border-radius: 12px; padding: 18px; margin-top: 15px; display: none; }
+    .result-card.show { display: block; }
+    .row { display: grid; grid-template-columns: 130px 1fr; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(212,175,55,0.1); font-size: 0.85rem; }
+    .row:last-child { border: none; }
+    .row .key { color: #D4AF37; font-weight: 600; }
+    .row .value { color: #f5f5f5; word-break: break-all; font-family: 'Orbitron', monospace; font-size: 0.72rem; }
+    .value.green { color: #4ade80; }
+    .value.red { color: #ef4444; }
+    .copy-btn { padding: 3px 10px; font-size: 0.65rem; background: rgba(212,175,55,0.15); border: 1px solid #D4AF37; color: #D4AF37; border-radius: 5px; cursor: pointer; margin-left: 8px; }
+    .rarity-badge { display: inline-block; padding: 3px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
+    .rarity-NORMAL { background: rgba(136,136,136,0.2); color: #888; }
+    .rarity-LOW { background: rgba(212,175,55,0.2); color: #D4AF37; }
+    .rarity-MEDIUM { background: rgba(167,139,250,0.2); color: #a78bfa; }
+    .rarity-HIGH { background: rgba(239,68,68,0.2); color: #ef4444; }
+    .rarity-LEGEND { background: linear-gradient(135deg, #D4AF37, #8B6914); color: #000; }
+    .error-box { background: rgba(239,68,68,0.1); border: 1px solid #ef4444; color: #ef4444; padding: 15px; border-radius: 10px; font-size: 0.85rem; margin-top: 15px; }
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>🔥 YudhistiraChackers 🔥</h1>
+    <p class="subtitle">PREMIUM FF GENERATOR</p>
+    
+    <div class="card">
+        <label>🌏 Region</label>
+        <select id="region">
+            <option value="ID">🇮🇩 Indonesia</option>
+            <option value="IND">🇮🇳 India</option>
+            <option value="SG">🇸🇬 Singapore</option>
+            <option value="MY">🇲🇾 Malaysia</option>
+            <option value="TH">🇹🇭 Thailand</option>
+            <option value="VN">🇻🇳 Vietnam</option>
+            <option value="BD">🇧🇩 Bangladesh</option>
+            <option value="PK">🇵🇰 Pakistan</option>
+            <option value="BR">🇧🇷 Brazil</option>
+            <option value="ME">🌍 Middle East</option>
+        </select>
+        
+        <label>📝 Prefix Nama</label>
+        <input type="text" id="prefix" placeholder="FAX" value="FAX" maxlength="5">
+        
+        <button onclick="generate()" id="btn">🚀 Generate Akun</button>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="color:#D4AF37;font-size:0.8rem;letter-spacing:2px;">GENERATING...</p>
+        </div>
+        
+        <div class="result-card" id="resultCard"></div>
+    </div>
+</div>
+
+<script>
+async function generate() {
+    const region = document.getElementById('region').value;
+    const prefix = document.getElementById('prefix').value || 'FAX';
+    const btn = document.getElementById('btn');
+    const loading = document.getElementById('loading');
+    const resultCard = document.getElementById('resultCard');
+    
+    btn.disabled = true;
+    loading.classList.add('show');
+    resultCard.classList.remove('show');
+    
+    try {
+        const response = await fetch(`/api/gen?region=${region}&prefix=${prefix}`);
+        const data = await response.json();
+        
+        if (!data.success) {
+            resultCard.classList.add('show');
+            resultCard.innerHTML = `<div class="error-box">❌ ${data.error}<br><small>Step: ${data.step || 'unknown'}</small></div>`;
+        } else {
+            resultCard.classList.add('show');
+            resultCard.innerHTML = `
+                <div class="row"><span class="key">🆔 UID</span><span class="value">${data.uid}</span></div>
+                <div class="row"><span class="key">Account ID</span><span class="value">${data.account_id}</span></div>
+                <div class="row"><span class="key">Name</span><span class="value green">${data.name}</span></div>
+                <div class="row"><span class="key">Password</span><span class="value">${data.password}</span></div>
+                <div class="row"><span class="key">Region</span><span class="value">${data.region}</span></div>
+                <div class="row"><span class="key">Rarity</span><span class="value"><span class="rarity-badge rarity-${data.rarity}">${data.rarity}</span> (${data.rarity_score})</span></div>
+                <div class="row"><span class="key">JWT</span><span class="value">${data.jwt_token ? data.jwt_token.substring(0, 60) + '...' : 'N/A'}</span></div>
+                <div class="row"><span class="key">Created</span><span class="value">${data.created_at}</span></div>
+            `;
+        }
+    } catch (e) {
+        resultCard.classList.add('show');
+        resultCard.innerHTML = `<div class="error-box">❌ Error: ${e.message}</div>`;
+    }
+    
+    btn.disabled = false;
+    loading.classList.remove('show');
+}
+</script>
+</body>
+</html>
