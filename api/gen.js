@@ -2,7 +2,7 @@
 // FF GUEST GENERATOR API - VERCEL FUNCTION
 // ============================================================
 // Endpoint: /api/gen?region=ID&prefix=FAX
-// Dengan logging detail untuk debug
+// Sudah include device_id di payload register
 // ============================================================
 
 import crypto from 'crypto';
@@ -37,6 +37,9 @@ const REGION_LANG = {
     "ID": "id", "ME": "ar", "CIS": "ru", "TH": "th",
     "VN": "vi", "BR": "pt", "US": "en"
 };
+
+// ========== DEVICE ID ==========
+const DEVICE_ID = '02-344afb0e-593c-40b7-92f2-171972f74807';
 
 // ============================================================
 // AES ENCRYPT
@@ -89,12 +92,13 @@ function detectRarity(accountId) {
 }
 
 // ============================================================
-// STEP 1: GUEST REGISTER (DENGAN LOGGING DETAIL)
+// STEP 1: GUEST REGISTER (DENGAN DEVICE_ID)
 // ============================================================
 async function guestRegister(password) {
     const payload = JSON.stringify({
         app_id: 100067,
         client_type: 2,
+        device_id: DEVICE_ID,
         password: password,
         source: 2
     });
@@ -131,7 +135,7 @@ async function guestRegister(password) {
                         console.log(`[REGISTER] SUCCESS! UID: ${data.data.uid}`);
                         return data.data.uid;
                     } else {
-                        console.log(`[REGISTER] API Error code: ${data.code} - ${data.error || data.message}`);
+                        console.log(`[REGISTER] API Error: ${data.code} - ${data.error}`);
                     }
                 } catch (e) {
                     console.log(`[REGISTER] JSON parse error: ${e.message}`);
@@ -153,7 +157,7 @@ async function guestToken(uid, password) {
         client_id: 100067,
         client_secret: HEX_KEY,
         client_type: 2,
-        device_id: '02-344afb0e-593c-40b7-92f2-171972f74807',
+        device_id: DEVICE_ID,
         password: password,
         response_type: 'token',
         uid: uid
@@ -191,8 +195,6 @@ async function guestToken(uid, password) {
                             access_token: data.data.access_token,
                             open_id: data.data.open_id
                         };
-                    } else {
-                        console.log(`[TOKEN] API Error: ${data.code} - ${data.error || data.message}`);
                     }
                 } catch (e) {
                     console.log(`[TOKEN] JSON parse error: ${e.message}`);
@@ -417,7 +419,7 @@ export default async function handler(req, res) {
                 success: false,
                 error: 'Guest register gagal',
                 step: 'register',
-                hint: 'Cek Vercel Logs untuk detail error'
+                hint: 'Cek Vercel Logs untuk detail'
             });
         }
         
